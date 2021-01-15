@@ -3,21 +3,30 @@ import Grid from '@material-ui/core/Grid';
 import Card from '@material-ui/core/Card';
 import CardHeader from '@material-ui/core/CardHeader';
 import CardContent from '@material-ui/core/CardContent';
+import IconButton from '@material-ui/core/IconButton';
+import ThumbUpIcon from '@material-ui/icons/ThumbUp';
 import firebase from 'firebase';
 
 const ContentGridCard = props => {
-  const {content} = props;
+  const {content, handleCardSelect} = props;
   if(content){
     return(
       <Grid item xs={4}>
         <Card>
-          <CardHeader title={content.name}></CardHeader>
+          <CardHeader title={content.name} onClick={() => {handleCardSelect(content.id)}}/>
           <CardContent>
-            <img style={{maxHeight: '295px', width: '100%', objectFit: 'cover'}} src={content.image} alt=""/>
-            <div>
-              {content.description}
-              <TestButton/>
-              <TestDatabaseSum/>
+            <img 
+              style={{maxHeight: '295px', width: '100%', objectFit: 'cover'}} 
+              src={content.image} 
+              onClick={() => {handleCardSelect(content.id)}}
+              alt=""/>
+            <div style={{display: 'flex'}}>
+              <div
+                onClick={() => {handleCardSelect(content.id)}} 
+                style={{paddingTop: '12px'}}>
+                  {content.description}
+              </div>
+              <LikeButton contentId={content.id} />
             </div>
           </CardContent>
         </Card>
@@ -28,28 +37,40 @@ const ContentGridCard = props => {
 }
 export default ContentGridCard;
 
-const TestButton = props => {
-  const testDatabase = e => {
-    firebase.database().ref('test').push().set({test: 'hello world'})
+const LikeButton = props => {
+  const {contentId} = props;
+  const addLike = () => {
+    firebase.database().ref('content-likes').push().set({[contentId]: getLikes() || 0 + 1})
+      .then(() => {
+        return;
+      }, error => {
+        console.log('error' + error);
+      });
+  }
+  const getLikes = () => {
+    firebase.database().ref('content-likes').get()
       .then(snapshot => {
-        console.log('success');
+        return snapshot.filter(content => {
+          return content === contentId;
+        })
       }, error => {
         console.log('error' + error);
       });
   }
 
   return (
-    <React.Fragment>
-      <button onClick={testDatabase}>Try Me</button>
-    </React.Fragment>
+    <IconButton onClick={addLike} style={{marginRight: 0, marginLeft: 'auto'}}> 
+      <ThumbUpIcon/>
+    </IconButton>
   )
 }
 
 
-const TestDatabaseSum = () => {
+const Likes = props => {
+  const { contentId } = props;
   const [data, setData] = useState([]);
-  const testGetDatabase = e => {
-    firebase.database().ref('test').get()
+  const getLikes = e => {
+    firebase.database().ref('content-likes').get()
       .then(snapshot => {
         let testy = [];
         snapshot.forEach(each => {
@@ -62,7 +83,7 @@ const TestDatabaseSum = () => {
   }
   return (
     <React.Fragment>
-      <p onClick={testGetDatabase}>click me</p>
+      <p onClick={getLikes(contentId)}>click me</p>
       <p>
         {data.map(d => {return (d.test)})}
       </p>
